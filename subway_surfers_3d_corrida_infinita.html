@@ -1,0 +1,2491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Subway Surfers 3D - Corrida Infinita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1e3a8a;
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .font-display {
+            font-family: 'Lilita One', cursive, sans-serif;
+            letter-spacing: 0.04em;
+        }
+        .subway-logo-top {
+            background: linear-gradient(180deg, #ffffff 0%, #fde047 55%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 5px 0 #1e1b4b) drop-shadow(0 8px 12px rgba(0,0,0,0.45));
+        }
+        .subway-logo-bottom {
+            background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #15803d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 5px 0 #052e16) drop-shadow(0 8px 12px rgba(0,0,0,0.45));
+        }
+        .tap-to-play-text {
+            text-shadow:
+                -2px -2px 0 #1e1b4b,
+                 2px -2px 0 #1e1b4b,
+                -2px  2px 0 #1e1b4b,
+                 2px  2px 0 #1e1b4b,
+                 0px  5px 0 #1e1b4b,
+                 0px  8px 15px rgba(0,0,0,0.6);
+            animation: pulseTap 1.4s ease-in-out infinite;
+        }
+        @keyframes pulseTap {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.07); }
+        }
+        .arcade-btn {
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+        .arcade-btn:active {
+            transform: translateY(3px) scale(0.97);
+        }
+    </style>
+</head>
+<body class="relative w-full h-full">
+
+    <!-- Canvas Principal do Jogo -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Notificação Rápida (Toast) -->
+    <div id="toastBanner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none bg-indigo-950/90 border-2 border-amber-400 text-white font-black text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap">
+        🛹 Prancha comprada!
+    </div>
+
+    <!-- HUD Durante a Corrida -->
+    <div id="hudLayer" class="hidden fixed inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-5 z-10">
+        <!-- Barra Superior -->
+        <div class="flex justify-between items-start gap-2">
+            <!-- Botão Pausar / Som + Power-ups Ativos -->
+            <div class="flex flex-col gap-2 items-start">
+                <div class="flex items-center gap-2 pointer-events-auto">
+                    <button id="soundToggleBtn" class="arcade-btn bg-amber-400 hover:bg-amber-300 border-b-4 border-amber-600 text-indigo-950 font-black p-2.5 rounded-2xl shadow-lg text-base">
+                        🔊
+                    </button>
+                    <button id="homeBtn" class="arcade-btn bg-sky-400 hover:bg-sky-300 border-b-4 border-sky-600 text-indigo-950 font-black px-3 py-2 rounded-2xl shadow-lg text-xs sm:text-sm">
+                        🏠 INÍCIO
+                    </button>
+                </div>
+
+                <!-- Indicadores de Power-Ups Ativos -->
+                <div class="flex flex-col gap-1.5 mt-1">
+                    <div id="boardHud" class="hidden items-center gap-2 bg-cyan-500/95 border-2 border-white px-3 py-1 rounded-full shadow-lg">
+                        <span class="text-base">🛹</span>
+                        <div class="w-16 sm:w-20 h-2.5 bg-cyan-950 rounded-full overflow-hidden">
+                            <div id="boardBar" class="h-full bg-yellow-300 w-full"></div>
+                        </div>
+                    </div>
+                    <div id="magnetHud" class="hidden items-center gap-2 bg-rose-500/95 border-2 border-white px-3 py-1 rounded-full shadow-lg">
+                        <span class="text-base">🧲</span>
+                        <div class="w-16 sm:w-20 h-2.5 bg-rose-950 rounded-full overflow-hidden">
+                            <div id="magnetBar" class="h-full bg-white w-full"></div>
+                        </div>
+                    </div>
+                    <div id="multiplierHud" class="hidden items-center gap-2 bg-amber-500/95 border-2 border-white px-3 py-1 rounded-full shadow-lg">
+                        <span class="text-base">⭐</span>
+                        <div class="w-16 sm:w-20 h-2.5 bg-amber-950 rounded-full overflow-hidden">
+                            <div id="multiplierBar" class="h-full bg-white w-full"></div>
+                        </div>
+                    </div>
+                    <div id="sneakersHud" class="hidden items-center gap-2 bg-fuchsia-500/95 border-2 border-white px-3 py-1 rounded-full shadow-lg">
+                        <span class="text-base">👟</span>
+                        <div class="w-16 sm:w-20 h-2.5 bg-fuchsia-950 rounded-full overflow-hidden">
+                            <div id="sneakersBar" class="h-full bg-white w-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placar Direito (Estilo Subway Surfers) -->
+            <div class="flex flex-col items-end gap-1.5">
+                <div class="bg-indigo-950/85 border-2 border-white/80 rounded-2xl px-4 py-1.5 shadow-xl flex items-center gap-3">
+                    <span id="multiplierBadge" class="bg-amber-400 text-indigo-950 font-black text-xs px-2 py-0.5 rounded-lg">1X</span>
+                    <span id="hudScore" class="font-display text-2xl sm:text-3xl text-white tracking-wider">000000</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <!-- Cronômetro da Corrida -->
+                    <div class="bg-indigo-950/85 border-2 border-sky-400/90 rounded-2xl px-3 py-1 shadow-lg flex items-center gap-1.5">
+                        <span class="text-sm sm:text-base">⏱️</span>
+                        <span id="hudTimer" class="font-display text-base sm:text-lg text-sky-300">00:00.0</span>
+                    </div>
+                    <!-- Contador de Moedas (No Coin) -->
+                    <div id="hudCoinBox" class="bg-indigo-950/85 border-2 border-emerald-400/90 rounded-2xl px-3.5 py-1 shadow-lg flex items-center gap-2 transition-colors">
+                        <span class="text-base">🪙</span>
+                        <span id="hudCoins" class="font-display text-lg sm:text-xl text-yellow-300">0</span>
+                        <span id="noCoinBadge" class="bg-emerald-500 text-indigo-950 font-black text-[10px] px-1.5 py-0.5 rounded-md uppercase">NO COIN</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra Inferior: Botão de Prancha Voadora -->
+        <div class="flex justify-between items-end">
+            <div class="bg-black/45 backdrop-blur-sm text-white/90 text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl">
+                Duplo clique ou [C] para Prancha
+            </div>
+
+            <button id="activateBoardBtn" class="arcade-btn pointer-events-auto relative bg-gradient-to-b from-cyan-300 via-sky-500 to-blue-600 border-4 border-white rounded-3xl px-4 py-2.5 shadow-2xl flex items-center gap-2">
+                <span class="text-2xl">🛹</span>
+                <div class="text-left leading-tight">
+                    <div class="font-display text-white text-sm sm:text-base drop-shadow">PRANCHA</div>
+                    <div class="text-[11px] font-black text-yellow-200">Estoque: <span id="hudBoardCount">3</span></div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA INICIAL (Estilo Clássico Subway Surfers) -->
+    <div id="startScreen" class="fixed inset-0 z-20 flex flex-col justify-between p-4 sm:p-6 cursor-pointer">
+        <!-- Topo da Tela Inicial: Recorde, Moedas e Pranchas -->
+        <div class="flex justify-between items-center gap-2 z-30" onclick="event.stopPropagation()">
+            <!-- Recorde -->
+            <div class="bg-indigo-950/85 border-2 border-amber-400 rounded-2xl px-3.5 py-1.5 shadow-lg flex items-center gap-2">
+                <span class="text-lg">🏆</span>
+                <div>
+                    <div class="text-[10px] font-black text-amber-300 uppercase leading-none">Recorde</div>
+                    <div id="startHighScore" class="font-display text-base sm:text-lg text-white leading-tight">0</div>
+                </div>
+            </div>
+
+            <!-- Banco de Moedas + Comprar Prancha -->
+            <div class="flex items-center gap-2">
+                <button id="buyBoardBtn" class="arcade-btn bg-gradient-to-b from-cyan-400 to-blue-600 hover:from-cyan-300 hover:to-blue-500 border-2 border-white rounded-2xl px-3 py-1.5 shadow-lg flex items-center gap-1.5 text-white">
+                    <span class="text-base">🛹</span>
+                    <span id="startBoardCount" class="font-display text-base sm:text-lg">3</span>
+                    <span class="bg-amber-400 text-indigo-950 font-black text-[10px] px-1.5 py-0.5 rounded-md">+50🪙</span>
+                </button>
+
+                <div class="bg-indigo-950/85 border-2 border-yellow-400 rounded-2xl px-3.5 py-1.5 shadow-lg flex items-center gap-1.5">
+                    <span class="text-lg">🪙</span>
+                    <span id="startTotalCoins" class="font-display text-base sm:text-lg text-yellow-300">100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Centro: Logo Vibrante Estilo Grafite + Toque para Jogar -->
+        <div class="flex flex-col items-center text-center my-auto pointer-events-none select-none">
+            <div class="transform -rotate-3 mb-2">
+                <h1 class="font-display text-5xl sm:text-7xl subway-logo-top leading-none tracking-wide">
+                    SUBWAY
+                </h1>
+                <h2 class="font-display text-4xl sm:text-6xl subway-logo-bottom leading-none -mt-1 sm:-mt-2 tracking-wider">
+                    SURFERS
+                </h2>
+            </div>
+
+            <!-- Espaço livre no meio para ver o personagem nos trilhos -->
+            <div class="h-36 sm:h-44"></div>
+
+            <!-- Aviso Pulsante Clássico -->
+            <div class="tap-to-play-text font-display text-3xl sm:text-4xl text-amber-300 tracking-wider uppercase mt-2">
+                TOQUE PARA JOGAR
+            </div>
+            <p class="mt-2 bg-indigo-950/75 text-white/95 font-extrabold text-xs sm:text-sm px-4 py-1.5 rounded-full border border-white/25 shadow-md">
+                ⬅️ ➡️ Pistas • ⬆️ Pular • ⬇️ Rolar • Duplo Toque: Prancha 🛹
+            </p>
+        </div>
+
+        <!-- Rodapé Estilo Arcade -->
+        <div class="flex justify-center gap-3 z-30" onclick="event.stopPropagation()">
+            <button id="playNowBtn" class="arcade-btn bg-gradient-to-b from-emerald-400 to-green-600 hover:from-emerald-300 hover:to-green-500 border-b-4 border-green-800 border-2 border-white text-white font-display text-xl sm:text-2xl px-8 py-3 rounded-3xl shadow-2xl tracking-wider">
+                ▶ CORRER AGORA
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA DE FIM DE JOGO -->
+    <div id="gameOverScreen" class="hidden fixed inset-0 z-30 flex items-center justify-center bg-indigo-950/75 backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-b from-blue-600 to-indigo-900 border-4 border-amber-400 rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center shadow-2xl">
+            <div class="inline-block bg-rose-500 border-2 border-white text-white font-display text-xl px-4 py-1 rounded-full -mt-11 mb-2 shadow-lg transform -rotate-2">
+                PEGO PELO GUARDA!
+            </div>
+            <h2 class="font-display text-3xl sm:text-4xl text-white drop-shadow mb-4">FIM DA CORRIDA</h2>
+
+            <div class="bg-indigo-950/75 border-2 border-white/20 rounded-2xl p-4 mb-5 space-y-2.5">
+                <div class="flex justify-between items-center border-b border-white/15 pb-2">
+                    <span class="text-xs font-black text-sky-300 uppercase">Pontuação</span>
+                    <span id="finalScore" class="font-display text-2xl text-white">0</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <div class="text-[11px] font-black text-amber-300 uppercase">Recorde</div>
+                        <div id="finalHighScore" class="font-display text-xl text-amber-300">0</div>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-black text-sky-300 uppercase">Tempo</div>
+                        <div id="finalTime" class="font-display text-xl text-sky-300">00:00.0</div>
+                    </div>
+                </div>
+                <div class="pt-2 border-t border-white/15 flex justify-between items-center px-2">
+                    <span class="text-xs font-black text-yellow-300 uppercase">Moedas Coletadas:</span>
+                    <span id="finalCoins" class="font-display text-lg text-yellow-300">0 🪙 (NO COIN!)</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2.5">
+                <button id="restartBtn" class="arcade-btn w-full bg-gradient-to-b from-emerald-400 to-green-600 hover:from-emerald-300 hover:to-green-500 border-b-4 border-green-800 border-2 border-white text-white font-display text-2xl py-3 rounded-2xl shadow-xl">
+                    🔄 JOGAR DE NOVO
+                </button>
+                <button id="backToMenuBtn" class="arcade-btn w-full bg-amber-400 hover:bg-amber-300 border-b-4 border-amber-600 text-indigo-950 font-display text-lg py-2.5 rounded-2xl shadow-lg">
+                    🏠 TELA INICIAL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SINTETIZADOR DE ÁUDIO (WEB AUDIO API) ---
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type, duration, vol = 0.14, slideFreq = null) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                if (slideFreq) {
+                    osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
+                }
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+
+            playJump() {
+                this.playTone(260, 'sine', 0.22, 0.16, 620);
+            }
+
+            playSlide() {
+                this.playTone(300, 'triangle', 0.18, 0.14, 120);
+            }
+
+            playLane() {
+                this.playTone(360, 'sine', 0.08, 0.09, 480);
+            }
+
+            playCoin() {
+                this.playTone(987.77, 'sine', 0.08, 0.11);
+                setTimeout(() => this.playTone(1318.51, 'sine', 0.14, 0.11), 50);
+            }
+
+            playPowerup() {
+                this.playTone(440, 'triangle', 0.1, 0.14);
+                setTimeout(() => this.playTone(554, 'triangle', 0.1, 0.14), 65);
+                setTimeout(() => this.playTone(659, 'triangle', 0.1, 0.14), 130);
+                setTimeout(() => this.playTone(880, 'triangle', 0.22, 0.16), 195);
+            }
+
+            playHoverboard() {
+                this.playTone(220, 'sawtooth', 0.14, 0.14, 660);
+                setTimeout(() => this.playTone(520, 'sine', 0.25, 0.16, 880), 90);
+            }
+
+            playBoardCrash() {
+                this.playTone(320, 'sawtooth', 0.25, 0.2, 90);
+                setTimeout(() => this.playTone(480, 'sine', 0.2, 0.15, 760), 110);
+            }
+
+            playStumble() {
+                this.playTone(240, 'sawtooth', 0.22, 0.2, 110);
+                setTimeout(() => this.playTone(520, 'square', 0.12, 0.12, 680), 80);
+            }
+
+            playCrash() {
+                this.playTone(160, 'sawtooth', 0.35, 0.25, 42);
+            }
+        }
+
+        const sfx = new SoundEffects();
+
+        // --- ELEMENTOS DA INTERFACE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const hudLayer = document.getElementById('hudLayer');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const toastBanner = document.getElementById('toastBanner');
+
+        const hudScore = document.getElementById('hudScore');
+        const hudCoins = document.getElementById('hudCoins');
+        const hudTimer = document.getElementById('hudTimer');
+        const hudCoinBox = document.getElementById('hudCoinBox');
+        const noCoinBadge = document.getElementById('noCoinBadge');
+        const hudBoardCount = document.getElementById('hudBoardCount');
+        const multiplierBadge = document.getElementById('multiplierBadge');
+
+        const boardHud = document.getElementById('boardHud');
+        const boardBar = document.getElementById('boardBar');
+        const magnetHud = document.getElementById('magnetHud');
+        const magnetBar = document.getElementById('magnetBar');
+        const multiplierHud = document.getElementById('multiplierHud');
+        const multiplierBar = document.getElementById('multiplierBar');
+        const sneakersHud = document.getElementById('sneakersHud');
+        const sneakersBar = document.getElementById('sneakersBar');
+
+        const startHighScore = document.getElementById('startHighScore');
+        const startTotalCoins = document.getElementById('startTotalCoins');
+        const startBoardCount = document.getElementById('startBoardCount');
+
+        // --- VARIÁVEIS GLOBAIS E PERSISTÊNCIA ---
+        let width = 0;
+        let height = 0;
+        let gameState = 'START'; // 'START', 'PLAYING', 'GAMEOVER'
+        let score = 0;
+        let coins = 0;
+        let runTime = 0;
+        let totalCoins = parseInt(localStorage.getItem('metroRunnerTotalCoins')) || 100;
+        let boardCount = parseInt(localStorage.getItem('metroRunnerBoards'));
+        if (isNaN(boardCount)) boardCount = 3;
+        let highScore = parseInt(localStorage.getItem('metroRunnerHighScore')) || 0;
+
+        function saveProgress() {
+            localStorage.setItem('metroRunnerTotalCoins', totalCoins);
+            localStorage.setItem('metroRunnerBoards', boardCount);
+            localStorage.setItem('metroRunnerHighScore', highScore);
+            startHighScore.textContent = highScore.toLocaleString('pt-BR');
+            startTotalCoins.textContent = totalCoins;
+            startBoardCount.textContent = boardCount;
+            hudBoardCount.textContent = boardCount;
+        }
+        saveProgress();
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const tenths = Math.floor((seconds * 10) % 10);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${tenths}`;
+        }
+
+        function showToast(text) {
+            toastBanner.textContent = text;
+            toastBanner.classList.remove('hidden');
+            clearTimeout(toastBanner._timer);
+            toastBanner._timer = setTimeout(() => {
+                toastBanner.classList.add('hidden');
+            }, 1800);
+        }
+
+        // --- PARÂMETROS DE CÂMERA E VELOCIDADE ---
+        const LANE_WIDTH = 135;
+        const CAMERA_Y = 235;
+        const CAMERA_Z = -310;
+        const FOV = 460;
+
+        const INITIAL_SPEED = 460;
+        const MAX_SPEED = 1580;
+        const SPEED_ACCEL = 11.5;
+
+        let baseSpeed = INITIAL_SPEED;
+        let currentSpeed = INITIAL_SPEED;
+        let distanceTraveled = 0;
+        let shakeTime = 0;
+        let shakeIntensity = 0;
+        let camYOffset = 0;
+
+        // Jogador
+        const player = {
+            lane: 0,
+            x: 0,
+            y: 0,
+            vy: 0,
+            groundY: 0,
+            isJumping: false,
+            isSliding: false,
+            slideTimer: 0,
+            runCycle: 0,
+            tilt: 0,
+            magnetTimer: 0,
+            multiplierTimer: 0,
+            sneakersTimer: 0,
+            boardTimer: 0,
+            boardMaxDuration: 16,
+            stumbleTimer: 0,
+            invulnTimer: 0,
+            airSteerCount: 0,
+            lastAirTrickTime: 0
+        };
+
+        // Policial Perseguidor & Cachorrinho
+        const cop = {
+            x: -28,
+            y: 0,
+            z: -58,
+            runCycle: 0
+        };
+
+        // Listas de Entidades
+        let obstacles = [];
+        let collectibles = [];
+        let particles = [];
+        let floatingTexts = [];
+        let buildings = [];
+        let trackProps = [];
+        let clouds = [];
+        let nextSpawnZ = 1050;
+
+        function resizeCanvas() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Projeção Perspectiva 3D -> 2D
+        function project(wx, wy, wz) {
+            const dz = wz - CAMERA_Z;
+            if (dz <= 10) return null;
+            const scale = FOV / dz;
+            const screenX = width * 0.5 + wx * scale;
+            const horizonY = height * 0.37;
+            const screenY = horizonY + (CAMERA_Y + camYOffset - wy) * scale;
+            return { x: screenX, y: screenY, scale: scale };
+        }
+
+        // Inicializa Cenário Urbano e Nuvens
+        function initEnvironment() {
+            buildings = [];
+            const palettes = [
+                { front: '#2563eb', side: '#1d4ed8', roof: '#60a5fa', win: '#fef08a' },
+                { front: '#7c3aed', side: '#6d28d9', roof: '#a78bfa', win: '#fde047' },
+                { front: '#e11d48', side: '#be123c', roof: '#fb7185', win: '#fef9c3' },
+                { front: '#0d9488', side: '#0f766e', roof: '#2dd4bf', win: '#fef08a' },
+                { front: '#ea580c', side: '#c2410c', roof: '#fb923c', win: '#ffffff' }
+            ];
+
+            for (let i = 0; i < 34; i++) {
+                const z = i * 165;
+                buildings.push({
+                    side: -1,
+                    z: z,
+                    width: 190 + (i % 3) * 45,
+                    height: 310 + ((i * 89) % 300),
+                    depth: 135,
+                    palette: palettes[i % palettes.length]
+                });
+                buildings.push({
+                    side: 1,
+                    z: z + 70,
+                    width: 190 + ((i + 1) % 3) * 45,
+                    height: 330 + ((i * 113) % 280),
+                    depth: 135,
+                    palette: palettes[(i + 2) % palettes.length]
+                });
+            }
+
+            // Postes de luz, árvores e arcos de sinalização ao longo da ferrovia
+            trackProps = [];
+            for (let i = 0; i < 24; i++) {
+                const z = 140 + i * 240;
+                trackProps.push({
+                    type: i % 5 === 0 ? 'gantry' : 'lamp',
+                    z: z,
+                    treeSide: i % 2 === 0 ? -1 : 1
+                });
+            }
+
+            clouds = [];
+            for (let i = 0; i < 8; i++) {
+                clouds.push({
+                    x: (i / 8) * width,
+                    y: height * (0.07 + (i % 3) * 0.055),
+                    speed: 10 + (i % 4) * 5,
+                    scale: 0.65 + (i % 3) * 0.3
+                });
+            }
+        }
+        initEnvironment();
+
+        // --- EFEITOS VISUAIS E FEEDBACK ---
+        function spawnParticles(wx, wy, wz, color, count = 14) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: wx,
+                    y: wy,
+                    z: wz,
+                    vx: (Math.random() - 0.5) * 240,
+                    vy: Math.random() * 210 + 60,
+                    vz: (Math.random() - 0.5) * 240,
+                    color: color,
+                    size: Math.random() * 6 + 3.5,
+                    life: 0.55 + Math.random() * 0.25,
+                    maxLife: 0.8
+                });
+            }
+        }
+
+        function spawnFloatingText(text, color = '#fde047', wx = player.x, wy = player.y + 95) {
+            floatingTexts.push({
+                text: text,
+                color: color,
+                x: wx,
+                y: wy,
+                z: 0,
+                vy: 95,
+                life: 0.95,
+                maxLife: 0.95
+            });
+        }
+
+        function triggerShake(intensity = 10, duration = 0.25) {
+            shakeIntensity = intensity;
+            shakeTime = duration;
+        }
+
+        // --- PRANCHA VOADORA (HOVERBOARD) ---
+        function activateHoverboard() {
+            if (gameState !== 'PLAYING') return;
+            if (player.boardTimer > 0) return;
+
+            if (boardCount <= 0) {
+                showToast('Sem pranchas! Compre na Tela Inicial (+50🪙)');
+                return;
+            }
+
+            boardCount--;
+            saveProgress();
+            player.boardTimer = player.boardMaxDuration;
+            sfx.playHoverboard();
+            spawnParticles(player.x, player.y + 15, 0, '#22d3ee', 22);
+            spawnFloatingText('PRANCHA ATIVA!', '#22d3ee');
+            triggerShake(5, 0.14);
+        }
+
+        function buyHoverboard() {
+            sfx.init();
+            if (totalCoins >= 50) {
+                totalCoins -= 50;
+                boardCount++;
+                saveProgress();
+                sfx.playPowerup();
+                showToast(`🛹 +1 Prancha comprada! (Total: ${boardCount})`);
+            } else {
+                sfx.playCrash();
+                showToast('Moedas insuficientes! Precisa de 50 🪙');
+            }
+        }
+
+        // --- GERADOR DE ONDAS DE OBSTÁCULOS E COLETÁVEIS ---
+        const trainColors = [
+            { body: '#2563eb', stripe: '#facc15', roof: '#93c5fd', dark: '#1e3a8a' },
+            { body: '#dc2626', stripe: '#ffffff', roof: '#fca5a5', dark: '#7f1d1d' },
+            { body: '#059669', stripe: '#fde047', roof: '#6ee7b7', dark: '#064e3b' },
+            { body: '#7c3aed', stripe: '#38bdf8', roof: '#c4b5fd', dark: '#4c1d95' }
+        ];
+
+        function spawnCoinLine(lane, startZ, count, spacing, startY = 26, arcHeight = 0) {
+            for (let i = 0; i < count; i++) {
+                const t = count > 1 ? i / (count - 1) : 0;
+                const yOffset = arcHeight > 0 ? Math.sin(t * Math.PI) * arcHeight : 0;
+                collectibles.push({
+                    type: 'coin',
+                    lane: lane,
+                    x: lane * LANE_WIDTH,
+                    y: startY + yOffset,
+                    z: startZ + i * spacing,
+                    bob: i * 0.45
+                });
+            }
+        }
+
+        function spawnWave(zPos) {
+            const lanes = [-1, 0, 1];
+            const shuffled = lanes.sort(() => Math.random() - 0.5);
+            const difficulty = Math.min(1, (baseSpeed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED));
+
+            const pattern = Math.random();
+
+            if (pattern < 0.36) {
+                // Padrão 1: Trem longo com rampa amarela + 1 pista livre
+                const rampLane = shuffled[0];
+                const blockedLane = shuffled[1];
+                const freeLane = shuffled[2];
+
+                const rampLen = 210;
+                const trainLen = 540;
+                const trainHeight = 126;
+                const tColor = trainColors[Math.floor(Math.random() * trainColors.length)];
+
+                obstacles.push({
+                    type: 'ramp',
+                    lane: rampLane,
+                    z: zPos,
+                    length: rampLen,
+                    height: trainHeight,
+                    speed: 0
+                });
+
+                obstacles.push({
+                    type: 'train',
+                    lane: rampLane,
+                    z: zPos + rampLen - 10,
+                    length: trainLen,
+                    height: trainHeight,
+                    speed: 0,
+                    color: tColor
+                });
+
+                spawnCoinLine(rampLane, zPos + 50, 7, 92, trainHeight + 28, 0);
+
+                if (difficulty > 0.25 && Math.random() < 0.65) {
+                    obstacles.push({
+                        type: 'train',
+                        lane: blockedLane,
+                        z: zPos + 80,
+                        length: 480,
+                        height: trainHeight,
+                        speed: 0,
+                        color: trainColors[(Math.floor(Math.random() * trainColors.length) + 1) % trainColors.length]
+                    });
+                }
+
+                spawnCoinLine(freeLane, zPos + 60, 5, 85, 26, 0);
+                nextSpawnZ = zPos + rampLen + trainLen + Math.max(360, 490 - difficulty * 130);
+
+            } else if (pattern < 0.72) {
+                // Padrão 2: Barreiras baixas (pular) e altas (deslizar)
+                const b1 = shuffled[0];
+                const b2 = shuffled[1];
+                const b3 = shuffled[2];
+
+                obstacles.push({
+                    type: 'barrier_low',
+                    lane: b1,
+                    z: zPos,
+                    length: 28,
+                    height: 44,
+                    speed: 0
+                });
+                spawnCoinLine(b1, zPos - 80, 5, 45, 28, 78);
+
+                obstacles.push({
+                    type: 'barrier_high',
+                    lane: b2,
+                    z: zPos + 75,
+                    length: 28,
+                    height: 112,
+                    clearance: 56,
+                    speed: 0
+                });
+                spawnCoinLine(b2, zPos - 5, 4, 48, 22, 0);
+
+                if (difficulty > 0.3 && Math.random() < 0.6) {
+                    obstacles.push({
+                        type: 'train',
+                        lane: b3,
+                        z: zPos + 25,
+                        length: 440,
+                        height: 126,
+                        speed: 0,
+                        color: trainColors[Math.floor(Math.random() * trainColors.length)]
+                    });
+                } else {
+                    spawnCoinLine(b3, zPos + 20, 4, 80, 26, 0);
+                }
+
+                nextSpawnZ = zPos + Math.max(460, 620 - difficulty * 150);
+
+            } else {
+                // Padrão 3: Trens estacionados e trens em movimento moderado
+                const trainLane1 = shuffled[0];
+                const trainLane2 = shuffled[1];
+                const openLane = shuffled[2];
+
+                const isMoving1 = difficulty > 0.2 && Math.random() < 0.45;
+                obstacles.push({
+                    type: 'train',
+                    lane: trainLane1,
+                    z: zPos,
+                    length: 480,
+                    height: 126,
+                    speed: isMoving1 ? 260 + difficulty * 160 : 0,
+                    color: trainColors[0]
+                });
+
+                if (Math.random() < 0.65) {
+                    obstacles.push({
+                        type: 'train',
+                        lane: trainLane2,
+                        z: zPos + 230,
+                        length: 460,
+                        height: 126,
+                        speed: 0,
+                        color: trainColors[2]
+                    });
+                }
+
+                spawnCoinLine(openLane, zPos + 40, 6, 85, 26, 0);
+                nextSpawnZ = zPos + Math.max(540, 720 - difficulty * 160);
+            }
+
+            // Spawn periódico de Power-ups (Ímã, 2X ou Super Tênis)
+            if (Math.random() < 0.28) {
+                const pLane = [-1, 0, 1][Math.floor(Math.random() * 3)];
+                const types = ['magnet', 'multiplier', 'sneakers'];
+                const pType = types[Math.floor(Math.random() * types.length)];
+                collectibles.push({
+                    type: pType,
+                    lane: pLane,
+                    x: pLane * LANE_WIDTH,
+                    y: 44,
+                    z: zPos + 210,
+                    bob: 0
+                });
+            }
+        }
+
+        // --- CONTROLES DO JOGADOR & BURLAS (PRO TRICKS) ---
+        function registerAirTrick(label, color = '#38bdf8') {
+            const now = performance.now();
+            if (now - player.lastAirTrickTime > 260) {
+                player.lastAirTrickTime = now;
+                spawnFloatingText(label, color, player.x, player.y + 105);
+            }
+        }
+
+        function moveLeft() {
+            if (gameState !== 'PLAYING') return;
+            if (player.lane > -1) {
+                player.lane--;
+                player.tilt = -0.24;
+                sfx.playLane();
+
+                if (player.isJumping && player.y > player.groundY + 18) {
+                    player.airSteerCount++;
+                    if (player.airSteerCount === 1) {
+                        registerAirTrick('DESVIO AÉREO!', '#38bdf8');
+                    } else if (player.airSteerCount >= 2) {
+                        registerAirTrick('BURLA DUPLA! ⚡', '#facc15');
+                    }
+                }
+            }
+        }
+
+        function moveRight() {
+            if (gameState !== 'PLAYING') return;
+            if (player.lane < 1) {
+                player.lane++;
+                player.tilt = 0.24;
+                sfx.playLane();
+
+                if (player.isJumping && player.y > player.groundY + 18) {
+                    player.airSteerCount++;
+                    if (player.airSteerCount === 1) {
+                        registerAirTrick('DESVIO AÉREO!', '#38bdf8');
+                    } else if (player.airSteerCount >= 2) {
+                        registerAirTrick('BURLA DUPLA! ⚡', '#facc15');
+                    }
+                }
+            }
+        }
+
+        function jump() {
+            if (gameState !== 'PLAYING') return;
+            if (!player.isJumping) {
+                const wasSliding = player.isSliding;
+                const speedFactor = 0.88 + 0.12 * (baseSpeed / INITIAL_SPEED);
+                const jumpBoost = player.sneakersTimer > 0 ? 1.38 : 1.0;
+                player.vy = 660 * speedFactor * jumpBoost;
+                player.isJumping = true;
+                player.isSliding = false;
+                player.slideTimer = 0;
+                player.airSteerCount = 0;
+                sfx.playJump();
+                spawnParticles(player.x, player.y + 5, 0, player.sneakersTimer > 0 ? '#e879f9' : '#ffffff', 8);
+
+                if (wasSliding) {
+                    registerAirTrick('SLIDE JUMP! 🔥', '#fb923c');
+                }
+            }
+        }
+
+        function slide() {
+            if (gameState !== 'PLAYING') return;
+            if (player.isJumping) {
+                player.vy = -1050;
+                registerAirTrick('CORTE RÁPIDO! ⬇️', '#4ade80');
+            }
+            player.isSliding = true;
+            player.slideTimer = 0.68;
+            sfx.playSlide();
+        }
+
+        // Teclado
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== 'PLAYING') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    startGame();
+                }
+                return;
+            }
+            switch (e.code) {
+                case 'ArrowLeft':
+                case 'KeyA':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    moveRight();
+                    break;
+                case 'ArrowUp':
+                case 'KeyW':
+                case 'Space':
+                    e.preventDefault();
+                    jump();
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    slide();
+                    break;
+                case 'KeyC':
+                case 'ShiftLeft':
+                case 'ShiftRight':
+                    activateHoverboard();
+                    break;
+            }
+        });
+
+        // Gestos de Toque / Mouse + Duplo Toque para Prancha
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchHandled = false;
+        let lastTapTime = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchHandled = false;
+
+                if (gameState === 'PLAYING') {
+                    const now = performance.now();
+                    if (now - lastTapTime < 280) {
+                        activateHoverboard();
+                        lastTapTime = 0;
+                    } else {
+                        lastTapTime = now;
+                    }
+                }
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (touchHandled || gameState !== 'PLAYING' || e.touches.length === 0) return;
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            const threshold = 26;
+
+            if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
+                touchHandled = true;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 0) moveRight();
+                    else moveLeft();
+                } else {
+                    if (dy < 0) jump();
+                    else slide();
+                }
+            }
+        }, { passive: true });
+
+        let mouseDown = false;
+        canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            touchStartX = e.clientX;
+            touchStartY = e.clientY;
+            touchHandled = false;
+        });
+
+        canvas.addEventListener('dblclick', () => {
+            if (gameState === 'PLAYING') {
+                activateHoverboard();
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDown || touchHandled || gameState !== 'PLAYING') return;
+            const dx = e.clientX - touchStartX;
+            const dy = e.clientY - touchStartY;
+            const threshold = 32;
+
+            if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
+                touchHandled = true;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 0) moveRight();
+                    else moveLeft();
+                } else {
+                    if (dy < 0) jump();
+                    else slide();
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        // --- FLUXO DE ESTADOS DO JOGO ---
+        function resetToMenu() {
+            gameState = 'START';
+            obstacles = [];
+            collectibles = [];
+            particles = [];
+            floatingTexts = [];
+            player.lane = 0;
+            player.x = 0;
+            player.y = 0;
+            player.vy = 0;
+            player.groundY = 0;
+            player.isJumping = false;
+            player.isSliding = false;
+            player.boardTimer = 0;
+            player.magnetTimer = 0;
+            player.multiplierTimer = 0;
+            player.sneakersTimer = 0;
+            player.stumbleTimer = 0;
+            player.invulnTimer = 0;
+            player.airSteerCount = 0;
+            cop.x = -28;
+            cop.y = 0;
+            cop.z = -58;
+            camYOffset = 0;
+
+            hudLayer.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            saveProgress();
+        }
+
+        function startGame() {
+            sfx.init();
+            gameState = 'PLAYING';
+            score = 0;
+            coins = 0;
+            runTime = 0;
+            baseSpeed = INITIAL_SPEED;
+            currentSpeed = INITIAL_SPEED;
+            distanceTraveled = 0;
+            camYOffset = 0;
+
+            player.lane = 0;
+            player.x = 0;
+            player.y = 0;
+            player.vy = 0;
+            player.groundY = 0;
+            player.isJumping = false;
+            player.isSliding = false;
+            player.slideTimer = 0;
+            player.tilt = 0;
+            player.magnetTimer = 0;
+            player.multiplierTimer = 0;
+            player.sneakersTimer = 0;
+            player.boardTimer = 0;
+            player.stumbleTimer = 0;
+            player.invulnTimer = 0;
+            player.airSteerCount = 0;
+            cop.x = -26;
+            cop.y = 0;
+            cop.z = -48;
+
+            obstacles = [];
+            collectibles = [];
+            particles = [];
+            floatingTexts = [];
+            nextSpawnZ = 1050;
+
+            spawnCoinLine(0, 480, 5, 85, 26, 0);
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hudLayer.classList.remove('hidden');
+        }
+
+        function handleCollision(hitObstacle) {
+            if (player.invulnTimer > 0) return;
+
+            // Se a Prancha Voadora estiver ativa, ela absorve a batida e salva o jogador!
+            if (player.boardTimer > 0) {
+                player.boardTimer = 0;
+                player.invulnTimer = 1.0;
+                sfx.playBoardCrash();
+                triggerShake(15, 0.35);
+                spawnParticles(player.x, player.y + 45, 0, '#22d3ee', 34);
+                spawnParticles(player.x, player.y + 45, 0, '#facc15', 22);
+                spawnFloatingText('PRANCHA SALVOU!', '#22d3ee');
+
+                obstacles = obstacles.filter(obs => obs !== hitObstacle && obs.z > 280);
+                return;
+            }
+
+            // 1ª Batida: Não morre direto! Fica desnorteado e o policial cola atrás
+            if (player.stumbleTimer <= 0) {
+                player.stumbleTimer = 6.5;
+                player.invulnTimer = 1.1;
+                baseSpeed = Math.max(INITIAL_SPEED * 0.9, baseSpeed * 0.85);
+                cop.z = -34;
+                sfx.playStumble();
+                triggerShake(14, 0.32);
+                spawnParticles(player.x, player.y + 55, 0, '#fde047', 22);
+                spawnFloatingText('💫 DESNORTEADO! CUIDADO!', '#facc15', player.x, player.y + 110);
+
+                if (hitObstacle && hitObstacle.type !== 'train') {
+                    obstacles = obstacles.filter(obs => obs !== hitObstacle);
+                }
+                return;
+            }
+
+            // 2ª Batida enquanto desnorteado: Policial alcança e encerra a corrida
+            triggerGameOver();
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            sfx.playCrash();
+            triggerShake(18, 0.45);
+            spawnParticles(player.x, player.y + 45, 0, '#ef4444', 32);
+
+            const finalScoreInt = Math.floor(score);
+            if (finalScoreInt > highScore) {
+                highScore = finalScoreInt;
+            }
+            totalCoins += coins;
+            saveProgress();
+
+            document.getElementById('finalScore').textContent = finalScoreInt.toLocaleString('pt-BR');
+            document.getElementById('finalHighScore').textContent = highScore.toLocaleString('pt-BR');
+            document.getElementById('finalTime').textContent = formatTime(runTime);
+            document.getElementById('finalCoins').textContent = coins === 0
+                ? '0 🪙 (NO COIN! 🏆)'
+                : `${coins} 🪙`;
+
+            hudLayer.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        // Eventos dos Botões
+        startScreen.addEventListener('click', startGame);
+        document.getElementById('playNowBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('backToMenuBtn').addEventListener('click', resetToMenu);
+        document.getElementById('homeBtn').addEventListener('click', resetToMenu);
+        document.getElementById('buyBoardBtn').addEventListener('click', buyHoverboard);
+        document.getElementById('activateBoardBtn').addEventListener('click', activateHoverboard);
+
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        soundToggleBtn.addEventListener('click', () => {
+            sfx.init();
+            sfx.muted = !sfx.muted;
+            soundToggleBtn.textContent = sfx.muted ? '🔇' : '🔊';
+        });
+
+        // --- LÓGICA PRINCIPAL (UPDATE) ---
+        function update(dt) {
+            if (shakeTime > 0) shakeTime -= dt;
+
+            clouds.forEach(c => {
+                c.x += c.speed * dt;
+                if (c.x > width + 140) c.x = -140;
+            });
+
+            if (gameState !== 'PLAYING') {
+                // Animação viva na tela inicial
+                player.runCycle += dt * 7;
+                cop.runCycle += dt * 7.5;
+                cop.x = -34 + Math.sin(performance.now() * 0.004) * 8;
+                cop.z = -56;
+                return;
+            }
+
+            // Cronômetro da corrida
+            runTime += dt;
+
+            // Aceleração gradual e progressiva
+            baseSpeed = Math.min(MAX_SPEED, baseSpeed + SPEED_ACCEL * dt);
+            const speedBoost = player.boardTimer > 0 ? 1.14 : 1.0;
+            currentSpeed = baseSpeed * speedBoost;
+            distanceTraveled += currentSpeed * dt;
+
+            // Pontuação
+            const mult = player.multiplierTimer > 0 ? 2 : 1;
+            score += (currentSpeed * dt * 0.05) * mult;
+
+            // Timers de Power-ups e Prancha
+            if (player.boardTimer > 0) player.boardTimer -= dt;
+            if (player.magnetTimer > 0) player.magnetTimer -= dt;
+            if (player.multiplierTimer > 0) player.multiplierTimer -= dt;
+            if (player.sneakersTimer > 0) player.sneakersTimer -= dt;
+            if (player.stumbleTimer > 0) player.stumbleTimer -= dt;
+            if (player.invulnTimer > 0) player.invulnTimer -= dt;
+
+            // Movimento lateral suave e ágil
+            const targetX = player.lane * LANE_WIDTH;
+            player.x += (targetX - player.x) * Math.min(1, dt * 19);
+            player.tilt += (0 - player.tilt) * Math.min(1, dt * 11);
+
+            // Atualiza posição do Policial Perseguidor atrás do jogador
+            cop.runCycle += dt * (currentSpeed * 0.025);
+            const targetCopX = player.x + Math.sin(cop.runCycle * 0.35) * 14;
+            cop.x += (targetCopX - cop.x) * Math.min(1, dt * 10);
+            cop.y += (player.groundY - cop.y) * Math.min(1, dt * 12);
+
+            let targetCopZ = -135;
+            if (player.stumbleTimer > 0) {
+                targetCopZ = -34;
+            } else if (runTime < 3.5) {
+                targetCopZ = -52 - (runTime / 3.5) * 83;
+            }
+            cop.z += (targetCopZ - cop.z) * Math.min(1, dt * 4.5);
+
+            // Deslize
+            if (player.isSliding) {
+                player.slideTimer -= dt;
+                if (player.slideTimer <= 0) {
+                    player.isSliding = false;
+                }
+            }
+
+            // Atualiza cenários
+            buildings.forEach(b => {
+                b.z -= currentSpeed * dt;
+                if (b.z < -260) {
+                    b.z += 34 * 165;
+                }
+            });
+
+            trackProps.forEach(tp => {
+                tp.z -= currentSpeed * dt;
+                if (tp.z < -220) {
+                    tp.z += 24 * 240;
+                }
+            });
+
+            // Spawna ondas com espaçamento generoso
+            nextSpawnZ -= currentSpeed * dt;
+            if (nextSpawnZ <= 2600) {
+                spawnWave(2600);
+            }
+
+            // Altura de suporte (chão, rampa ou teto de trem)
+            let supportHeight = 0;
+            const wasOnTrainRoof = player.groundY >= 95;
+
+            // Ordena obstáculos por Z antes de verificar colisões/velocidade relativa
+            obstacles.sort((a, b) => a.z - b.z);
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+
+                // Evita que trens em movimento atravessem outros trens/rampas na mesma pista
+                let effectiveObsSpeed = obs.speed;
+                if (obs.type === 'train' && effectiveObsSpeed > 0) {
+                    for (let j = 0; j < obstacles.length; j++) {
+                        const other = obstacles[j];
+                        if (other !== obs && other.lane === obs.lane && other.z < obs.z) {
+                            const gap = obs.z - (other.z + other.length);
+                            if (gap < 90) {
+                                effectiveObsSpeed = Math.min(effectiveObsSpeed, other.speed || 0);
+                            }
+                        }
+                    }
+                }
+
+                obs.z -= (currentSpeed + effectiveObsSpeed) * dt;
+
+                if (obs.z + obs.length < -380) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+
+                const obsCenterX = obs.lane * LANE_WIDTH;
+                // Hitbox lateral amigável para desvios rápidos (Corner Cuts)
+                const sameLane = Math.abs(player.x - obsCenterX) < 42;
+                const obsStart = obs.z;
+                const obsEnd = obs.z + obs.length;
+
+                if (sameLane && obsStart < 24 && obsEnd > -22) {
+                    if (obs.type === 'ramp') {
+                        const progress = Math.max(0, Math.min(1, (0 - obsStart) / obs.length));
+                        const rampY = progress * obs.height;
+                        if (player.y <= rampY + 26) {
+                            supportHeight = Math.max(supportHeight, rampY);
+                        }
+                    } else if (obs.type === 'train') {
+                        // Pouso facilitado no teto do trem e proteção contra colisão ao sair ou pular do teto
+                        const isAboveOrLeavingRoof = player.y >= obs.height - 34 || (wasOnTrainRoof && player.y >= obs.height - 46 && player.vy > -120);
+                        if (isAboveOrLeavingRoof && player.vy <= 260) {
+                            supportHeight = Math.max(supportHeight, obs.height);
+                        } else if (!wasOnTrainRoof && obsStart < 12 && obsStart > -26 && player.y < obs.height - 28) {
+                            handleCollision(obs);
+                        }
+                    } else if (obs.type === 'barrier_low') {
+                        if (player.y < obs.height - 10 && obsStart < 12 && obsEnd > -10) {
+                            handleCollision(obs);
+                        }
+                    } else if (obs.type === 'barrier_high') {
+                        const playerHeadY = player.isSliding ? player.y + 34 : player.y + 78;
+                        if (playerHeadY > obs.clearance + 8 && player.y < obs.height && obsStart < 12 && obsEnd > -10) {
+                            handleCollision(obs);
+                        }
+                    }
+                }
+            }
+
+            player.groundY = supportHeight;
+
+            // Gravidade e pulo
+            if (player.y > player.groundY || player.vy > 0) {
+                const gravScale = 0.88 + 0.12 * (baseSpeed / INITIAL_SPEED);
+                player.y += player.vy * dt;
+                player.vy -= 1820 * gravScale * dt;
+
+                if (player.y <= player.groundY) {
+                    player.y = player.groundY;
+                    player.vy = 0;
+                    player.isJumping = false;
+                }
+            } else {
+                player.y = player.groundY;
+                player.vy = 0;
+                player.isJumping = false;
+            }
+
+            // Câmera acompanha suavemente a altura do personagem nos trens
+            const targetCamY = player.groundY * 0.55;
+            camYOffset += (targetCamY - camYOffset) * Math.min(1, dt * 8);
+
+            // Ciclo de corrida
+            if (!player.isJumping && !player.isSliding && player.boardTimer <= 0) {
+                player.runCycle += dt * (currentSpeed * 0.023);
+            }
+
+            // Coletáveis (Moedas e Power-ups)
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const item = collectibles[i];
+                item.z -= currentSpeed * dt;
+                item.bob += dt * 6;
+
+                if (item.z < -260) {
+                    collectibles.splice(i, 1);
+                    continue;
+                }
+
+                // Atração do ímã
+                if (item.type === 'coin' && player.magnetTimer > 0 && item.z < 750 && item.z > -80) {
+                    item.x += (player.x - item.x) * Math.min(1, dt * 13);
+                    item.y += ((player.y + 42) - item.y) * Math.min(1, dt * 13);
+                    item.z += (0 - item.z) * Math.min(1, dt * 11);
+                }
+
+                const dx = Math.abs(player.x - item.x);
+                const dy = Math.abs((player.y + 40) - item.y);
+                const dz = Math.abs(item.z);
+
+                if (dx < 52 && dy < 58 && dz < 48) {
+                    if (item.type === 'coin') {
+                        if (coins === 0) {
+                            spawnFloatingText('NO COIN QUEBRADO! 🪙', '#f87171', player.x, player.y + 100);
+                        }
+                        coins++;
+                        score += 20 * mult;
+                        sfx.playCoin();
+                        spawnParticles(item.x, item.y, item.z, '#facc15', 7);
+                    } else if (item.type === 'magnet') {
+                        player.magnetTimer = 12.0;
+                        sfx.playPowerup();
+                        spawnParticles(item.x, item.y, item.z, '#f43f5e', 18);
+                        spawnFloatingText('ÍMÃ!', '#fb7185');
+                    } else if (item.type === 'multiplier') {
+                        player.multiplierTimer = 12.0;
+                        sfx.playPowerup();
+                        spawnParticles(item.x, item.y, item.z, '#f59e0b', 18);
+                        spawnFloatingText('PONTOS 2X!', '#fbbf24');
+                    } else if (item.type === 'sneakers') {
+                        player.sneakersTimer = 12.0;
+                        sfx.playPowerup();
+                        spawnParticles(item.x, item.y, item.z, '#d946ef', 18);
+                        spawnFloatingText('SUPER TÊNIS!', '#e879f9');
+                    }
+                    collectibles.splice(i, 1);
+                }
+            }
+
+            // Atualiza Partículas de Efeito (física e tempo de vida)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.z += pt.vz * dt;
+                pt.vy -= 520 * dt;
+                pt.life -= dt;
+                if (pt.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Atualiza Textos Flutuantes
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy * dt;
+                ft.life -= dt;
+                if (ft.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+
+            // Atualiza HUD
+            hudScore.textContent = String(Math.floor(score)).padStart(6, '0');
+            hudCoins.textContent = coins;
+            hudTimer.textContent = formatTime(runTime);
+            multiplierBadge.textContent = `${mult}X`;
+
+            if (coins === 0) {
+                noCoinBadge.classList.remove('hidden');
+                hudCoinBox.classList.add('border-emerald-400/90');
+                hudCoinBox.classList.remove('border-yellow-400/90');
+            } else {
+                noCoinBadge.classList.add('hidden');
+                hudCoinBox.classList.remove('border-emerald-400/90');
+                hudCoinBox.classList.add('border-yellow-400/90');
+            }
+
+            if (player.boardTimer > 0) {
+                boardHud.classList.remove('hidden');
+                boardHud.classList.add('flex');
+                boardBar.style.width = `${(player.boardTimer / player.boardMaxDuration) * 100}%`;
+            } else {
+                boardHud.classList.add('hidden');
+                boardHud.classList.remove('flex');
+            }
+
+            if (player.magnetTimer > 0) {
+                magnetHud.classList.remove('hidden');
+                magnetHud.classList.add('flex');
+                magnetBar.style.width = `${(player.magnetTimer / 12) * 100}%`;
+            } else {
+                magnetHud.classList.add('hidden');
+                magnetHud.classList.remove('flex');
+            }
+
+            if (player.multiplierTimer > 0) {
+                multiplierHud.classList.remove('hidden');
+                multiplierHud.classList.add('flex');
+                multiplierBar.style.width = `${(player.multiplierTimer / 12) * 100}%`;
+            } else {
+                multiplierHud.classList.add('hidden');
+                multiplierHud.classList.remove('flex');
+            }
+
+            if (player.sneakersTimer > 0) {
+                sneakersHud.classList.remove('hidden');
+                sneakersHud.classList.add('flex');
+                sneakersBar.style.width = `${(player.sneakersTimer / 12) * 100}%`;
+            } else {
+                sneakersHud.classList.add('hidden');
+                sneakersHud.classList.remove('flex');
+            }
+        }
+
+        // --- RENDERIZAÇÃO 3D REALISTA (DRAW) ---
+        function drawSkyAndCity() {
+            const horizonY = height * 0.37;
+
+            // Céu atmosférico com brilho solar
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            skyGrad.addColorStop(0, '#0369a1');
+            skyGrad.addColorStop(0.55, '#38bdf8');
+            skyGrad.addColorStop(1, '#bae6fd');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, horizonY + 12);
+
+            // Sol no horizonte com halo suave
+            const sunX = width * 0.76;
+            const sunY = horizonY * 0.42;
+            const sunGlow = ctx.createRadialGradient(sunX, sunY, 12, sunX, sunY, 130);
+            sunGlow.addColorStop(0, 'rgba(254, 249, 195, 0.95)');
+            sunGlow.addColorStop(0.35, 'rgba(253, 224, 71, 0.35)');
+            sunGlow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 130, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nuvens suaves
+            clouds.forEach(c => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, 65 * c.scale, 18 * c.scale, 0, 0, Math.PI * 2);
+                ctx.ellipse(c.x - 28 * c.scale, c.y + 4 * c.scale, 38 * c.scale, 14 * c.scale, 0, 0, Math.PI * 2);
+                ctx.ellipse(c.x + 30 * c.scale, c.y + 5 * c.scale, 42 * c.scale, 15 * c.scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Silhueta distante da metrópole no horizonte (profundidade realista)
+            ctx.fillStyle = 'rgba(30, 58, 138, 0.24)';
+            const cityStep = Math.max(36, width / 22);
+            for (let sx = 0; sx < width + cityStep; sx += cityStep) {
+                const bh = 38 + ((Math.floor(sx) * 37) % 68);
+                ctx.fillRect(sx, horizonY - bh + 4, cityStep - 4, bh);
+            }
+
+            // Chão lateral (grama e calçadas urbanas)
+            const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+            groundGrad.addColorStop(0, '#4ade80');
+            groundGrad.addColorStop(0.35, '#16a34a');
+            groundGrad.addColorStop(1, '#14532d');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
+
+            // Prédios 3D nas laterais com sombras e janelas iluminadas
+            const sortedBuildings = [...buildings].sort((a, b) => b.z - a.z);
+            sortedBuildings.forEach(b => {
+                const baseX = b.side * 445;
+                const pBotNear = project(baseX, 0, b.z);
+                const pTopNear = project(baseX, b.height, b.z);
+                const pBotFar = project(baseX, 0, b.z + b.depth);
+                const pTopFar = project(baseX, b.height, b.z + b.depth);
+
+                if (!pBotNear || !pTopNear || !pBotFar || !pTopFar) return;
+
+                const wNear = b.width * pBotNear.scale;
+                const xPos = b.side === -1 ? pBotNear.x - wNear : pBotNear.x;
+
+                // Sombra projetada no chão
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+                ctx.fillRect(xPos, pBotNear.y, wNear, 12 * pBotNear.scale);
+
+                // Face lateral interna (em perspectiva)
+                ctx.fillStyle = b.palette.side;
+                ctx.beginPath();
+                ctx.moveTo(pBotNear.x, pBotNear.y);
+                ctx.lineTo(pTopNear.x, pTopNear.y);
+                ctx.lineTo(pTopFar.x, pTopFar.y);
+                ctx.lineTo(pBotFar.x, pBotFar.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Face frontal
+                const bGrad = ctx.createLinearGradient(0, pTopNear.y, 0, pBotNear.y);
+                bGrad.addColorStop(0, b.palette.front);
+                bGrad.addColorStop(1, b.palette.side);
+                ctx.fillStyle = bGrad;
+                ctx.fillRect(xPos, pTopNear.y, wNear, pBotNear.y - pTopNear.y);
+
+                // Cornija / Topo do prédio
+                ctx.fillStyle = b.palette.roof;
+                ctx.fillRect(xPos, pTopNear.y, wNear, Math.max(2, 7 * pTopNear.scale));
+
+                // Janelas iluminadas em grade
+                if (wNear > 22) {
+                    const cols = 3;
+                    const rows = 5;
+                    const padX = wNear * 0.16;
+                    const padY = (pBotNear.y - pTopNear.y) * 0.12;
+                    const winW = (wNear - padX * 2) / (cols * 1.45);
+                    const winH = ((pBotNear.y - pTopNear.y) - padY * 2) / (rows * 1.75);
+
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            ctx.fillStyle = (r + c) % 2 === 0 ? b.palette.win : 'rgba(15, 23, 42, 0.45)';
+                            ctx.fillRect(
+                                xPos + padX + c * winW * 1.6,
+                                pTopNear.y + padY + r * winH * 1.9,
+                                winW,
+                                winH
+                            );
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawTrackProps() {
+            const sortedProps = [...trackProps].sort((a, b) => b.z - a.z);
+            sortedProps.forEach(tp => {
+                // Árvores urbanas e arbustos na calçada lateral
+                const treeX = tp.treeSide * 305;
+                const pTree = project(treeX, 0, tp.z);
+                if (pTree && pTree.scale > 0.08) {
+                    const s = pTree.scale;
+                    // Canteiro
+                    ctx.fillStyle = '#15803d';
+                    ctx.beginPath();
+                    ctx.ellipse(pTree.x, pTree.y, 22 * s, 7 * s, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Tronco
+                    ctx.fillStyle = '#78350f';
+                    ctx.fillRect(pTree.x - 4 * s, pTree.y - 42 * s, 8 * s, 42 * s);
+
+                    // Copa em camadas
+                    ctx.fillStyle = '#166534';
+                    ctx.beginPath();
+                    ctx.arc(pTree.x, pTree.y - 54 * s, 26 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.arc(pTree.x - 5 * s, pTree.y - 60 * s, 20 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Postes duplos de iluminação nas laterais dos trilhos
+                [-282, 282].forEach(lx => {
+                    const pBase = project(lx, 0, tp.z + 90);
+                    const pTop = project(lx, 185, tp.z + 90);
+                    if (!pBase || !pTop || pBase.scale < 0.07) return;
+                    const s = pBase.scale;
+
+                    ctx.strokeStyle = '#64748b';
+                    ctx.lineWidth = Math.max(1.5, 5 * s);
+                    ctx.beginPath();
+                    ctx.moveTo(pBase.x, pBase.y);
+                    ctx.lineTo(pTop.x, pTop.y);
+                    ctx.stroke();
+
+                    // Braço da luminária
+                    const armDir = lx < 0 ? 1 : -1;
+                    const lampX = pTop.x + armDir * 24 * s;
+                    ctx.beginPath();
+                    ctx.moveTo(pTop.x, pTop.y);
+                    ctx.lineTo(lampX, pTop.y - 4 * s);
+                    ctx.stroke();
+
+                    // Halo de luz
+                    const glow = ctx.createRadialGradient(lampX, pTop.y, 1, lampX, pTop.y, 18 * s);
+                    glow.addColorStop(0, 'rgba(254, 249, 195, 0.9)');
+                    glow.addColorStop(1, 'rgba(254, 249, 195, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(lampX, pTop.y, 18 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Pórtico / Passarela metálica ferroviária sobre as 3 pistas
+                if (tp.type === 'gantry') {
+                    const pLBot = project(-290, 0, tp.z);
+                    const pLTop = project(-290, 225, tp.z);
+                    const pRBot = project(290, 0, tp.z);
+                    const pRTop = project(290, 225, tp.z);
+                    if (pLBot && pLTop && pRBot && pRTop && pLBot.scale > 0.08) {
+                        const s = pLBot.scale;
+                        ctx.strokeStyle = '#334155';
+                        ctx.lineWidth = Math.max(2, 9 * s);
+                        ctx.beginPath();
+                        ctx.moveTo(pLBot.x, pLBot.y);
+                        ctx.lineTo(pLTop.x, pLTop.y);
+                        ctx.lineTo(pRTop.x, pRTop.y);
+                        ctx.lineTo(pRBot.x, pRBot.y);
+                        ctx.stroke();
+
+                        // Placa de sinalização no topo da passarela
+                        const midX = (pLTop.x + pRTop.x) * 0.5;
+                        const boardW = (pRTop.x - pLTop.x) * 0.36;
+                        const boardH = 22 * s;
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(midX - boardW * 0.5, pLTop.y - boardH * 0.4, boardW, boardH);
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = Math.max(1, 2 * s);
+                        ctx.strokeRect(midX - boardW * 0.5, pLTop.y - boardH * 0.4, boardW, boardH);
+                    }
+                }
+            });
+        }
+
+        function drawTracks() {
+            const pNearLeft = project(-315, 0, -180);
+            const pNearRight = project(315, 0, -180);
+            const pFarLeft = project(-315, 0, 3400);
+            const pFarRight = project(315, 0, 3400);
+
+            if (pNearLeft && pNearRight && pFarLeft && pFarRight) {
+                // Base de cascalho texturizada
+                const trackGrad = ctx.createLinearGradient(0, pFarLeft.y, 0, height);
+                trackGrad.addColorStop(0, '#334155');
+                trackGrad.addColorStop(0.4, '#1e293b');
+                trackGrad.addColorStop(1, '#090d16');
+
+                ctx.fillStyle = trackGrad;
+                ctx.beginPath();
+                ctx.moveTo(pNearLeft.x, pNearLeft.y);
+                ctx.lineTo(pNearRight.x, pNearRight.y);
+                ctx.lineTo(pFarRight.x, pFarRight.y);
+                ctx.lineTo(pFarLeft.x, pFarLeft.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Muretas laterais de concreto com faixa de segurança amarela
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 7;
+                ctx.beginPath();
+                ctx.moveTo(pNearLeft.x, pNearLeft.y);
+                ctx.lineTo(pFarLeft.x, pFarLeft.y);
+                ctx.moveTo(pNearRight.x, pNearRight.y);
+                ctx.lineTo(pFarRight.x, pFarRight.y);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(pNearLeft.x + 4, pNearLeft.y);
+                ctx.lineTo(pFarLeft.x + 1, pFarLeft.y);
+                ctx.moveTo(pNearRight.x - 4, pNearRight.y);
+                ctx.lineTo(pFarRight.x - 1, pFarRight.y);
+                ctx.stroke();
+            }
+
+            // Dormentes de madeira com sombra
+            const sleeperSpacing = 82;
+            const offset = distanceTraveled % sleeperSpacing;
+            for (let z = -120 - offset; z < 3200; z += sleeperSpacing) {
+                if (z < -120) continue;
+                const pL = project(-275, 0, z);
+                const pR = project(275, 0, z);
+                if (!pL || !pR) continue;
+                const h = Math.max(1.5, 9 * pL.scale);
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(pL.x, pL.y + h * 0.4, pR.x - pL.x, h);
+                ctx.fillStyle = '#451a03';
+                ctx.fillRect(pL.x, pL.y - h * 0.4, pR.x - pL.x, h);
+            }
+
+            // Trilhos de aço polido (com brilho metálico)
+            [-1, 0, 1].forEach(lane => {
+                const center = lane * LANE_WIDTH;
+                [-34, 34].forEach(railOffset => {
+                    const p1 = project(center + railOffset, 2, -160);
+                    const p2 = project(center + railOffset, 2, 3300);
+                    if (p1 && p2) {
+                        // Base escura do trilho
+                        ctx.strokeStyle = '#475569';
+                        ctx.lineWidth = 5.5;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+
+                        // Topo brilhante de aço
+                        ctx.strokeStyle = '#e2e8f0';
+                        ctx.lineWidth = 2.2;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y - 1);
+                        ctx.lineTo(p2.x, p2.y - 1);
+                        ctx.stroke();
+                    }
+                });
+            });
+
+            // Névoa suave no horizonte para transição realista
+            const horizonY = height * 0.37;
+            const fogGrad = ctx.createLinearGradient(0, horizonY - 25, 0, horizonY + 55);
+            fogGrad.addColorStop(0, 'rgba(186, 230, 253, 0)');
+            fogGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.5)');
+            fogGrad.addColorStop(1, 'rgba(186, 230, 253, 0)');
+            ctx.fillStyle = fogGrad;
+            ctx.fillRect(0, horizonY - 25, width, 80);
+        }
+
+        function drawBox3D(wx, wy, wz, w, h, d, colors) {
+            const clampedZ = Math.max(CAMERA_Z + 25, wz);
+            const clampedEndZ = Math.max(clampedZ + 5, wz + d);
+
+            const hw = w * 0.5;
+            const nBL = project(wx - hw, wy, clampedZ);
+            const nBR = project(wx + hw, wy, clampedZ);
+            const nTL = project(wx - hw, wy + h, clampedZ);
+            const nTR = project(wx + hw, wy + h, clampedZ);
+
+            const fBL = project(wx - hw, wy, clampedEndZ);
+            const fBR = project(wx + hw, wy, clampedEndZ);
+            const fTL = project(wx - hw, wy + h, clampedEndZ);
+            const fTR = project(wx + hw, wy + h, clampedEndZ);
+
+            if (!nBL || !nBR || !nTL || !nTR || !fBL || !fBR || !fTL || !fTR) return;
+
+            // Sombra projetada no chão
+            ctx.fillStyle = 'rgba(0,0,0,0.34)';
+            ctx.beginPath();
+            ctx.moveTo(nBL.x - 6 * nBL.scale, nBL.y + 3 * nBL.scale);
+            ctx.lineTo(nBR.x + 6 * nBR.scale, nBR.y + 3 * nBR.scale);
+            ctx.lineTo(fBR.x + 6 * fBR.scale, fBR.y + 3 * fBR.scale);
+            ctx.lineTo(fBL.x - 6 * fBL.scale, fBL.y + 3 * fBL.scale);
+            ctx.closePath();
+            ctx.fill();
+
+            // Lateral visível (desenhada antes do teto e da frente)
+            if (wx > 12) {
+                ctx.fillStyle = colors.side;
+                ctx.beginPath();
+                ctx.moveTo(nBL.x, nBL.y);
+                ctx.lineTo(nTL.x, nTL.y);
+                ctx.lineTo(fTL.x, fTL.y);
+                ctx.lineTo(fBL.x, fBL.y);
+                ctx.closePath();
+                ctx.fill();
+            } else if (wx < -12) {
+                ctx.fillStyle = colors.side;
+                ctx.beginPath();
+                ctx.moveTo(nBR.x, nBR.y);
+                ctx.lineTo(nTR.x, nTR.y);
+                ctx.lineTo(fTR.x, fTR.y);
+                ctx.lineTo(fBR.x, fBR.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Teto
+            ctx.fillStyle = colors.top;
+            ctx.beginPath();
+            ctx.moveTo(nTL.x, nTL.y);
+            ctx.lineTo(nTR.x, nTR.y);
+            ctx.lineTo(fTR.x, fTR.y);
+            ctx.lineTo(fTL.x, fTL.y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Frente só aparece se ainda não tiver passado pela linha do jogador/câmera
+            if (wz >= CAMERA_Z + 25) {
+                const frontGrad = ctx.createLinearGradient(nTL.x, nTL.y, nBL.x, nBL.y);
+                frontGrad.addColorStop(0, colors.front);
+                frontGrad.addColorStop(1, colors.side || colors.front);
+                ctx.fillStyle = frontGrad;
+                ctx.beginPath();
+                ctx.moveTo(nBL.x, nBL.y);
+                ctx.lineTo(nBR.x, nBR.y);
+                ctx.lineTo(nTR.x, nTR.y);
+                ctx.lineTo(nTL.x, nTL.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            return { nBL, nBR, nTL, nTR, fTL, fTR, showFront: wz >= CAMERA_Z + 25 };
+        }
+
+        function drawObstacle(obs) {
+            const wx = obs.lane * LANE_WIDTH;
+
+            if (obs.type === 'train') {
+                const w = 104;
+                const h = obs.height;
+                const d = obs.length;
+                const faces = drawBox3D(wx, 0, obs.z, w, h, d, {
+                    front: obs.color.body,
+                    top: obs.color.roof,
+                    side: obs.color.dark
+                });
+                if (!faces || !faces.showFront) return;
+
+                const { nBL, nBR, nTL } = faces;
+                const fw = nBR.x - nBL.x;
+                const fh = nBL.y - nTL.y;
+                if (fw <= 2 || fh <= 2) return;
+
+                // Para-brisa escuro com reflexo de vidro
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(nTL.x + fw * 0.12, nTL.y + fh * 0.14, fw * 0.76, fh * 0.28);
+                ctx.fillStyle = 'rgba(186, 230, 253, 0.35)';
+                ctx.beginPath();
+                ctx.moveTo(nTL.x + fw * 0.16, nTL.y + fh * 0.17);
+                ctx.lineTo(nTL.x + fw * 0.48, nTL.y + fh * 0.17);
+                ctx.lineTo(nTL.x + fw * 0.28, nTL.y + fh * 0.39);
+                ctx.lineTo(nTL.x + fw * 0.16, nTL.y + fh * 0.39);
+                ctx.closePath();
+                ctx.fill();
+
+                // Faixa pintada
+                ctx.fillStyle = obs.color.stripe;
+                ctx.fillRect(nTL.x, nTL.y + fh * 0.54, fw, fh * 0.13);
+
+                // Faróis com brilho radial
+                [0.24, 0.76].forEach(rx => {
+                    const lx = nTL.x + fw * rx;
+                    const ly = nTL.y + fh * 0.80;
+                    const r = Math.max(2.5, fw * 0.085);
+
+                    const glow = ctx.createRadialGradient(lx, ly, r * 0.2, lx, ly, r * 2.4);
+                    glow.addColorStop(0, 'rgba(254, 249, 195, 0.95)');
+                    glow.addColorStop(1, 'rgba(254, 249, 195, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, r * 2.4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#fef9c3';
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+            } else if (obs.type === 'ramp') {
+                const clampedZ = Math.max(CAMERA_Z + 25, obs.z);
+                const clampedEndZ = Math.max(clampedZ + 5, obs.z + obs.length);
+                const progressStart = Math.max(0, Math.min(1, (clampedZ - obs.z) / obs.length));
+                const startY = progressStart * obs.height;
+
+                const hw = 50;
+                const nBL = project(wx - hw, startY, clampedZ);
+                const nBR = project(wx + hw, startY, clampedZ);
+                const fTL = project(wx - hw, obs.height, clampedEndZ);
+                const fTR = project(wx + hw, obs.height, clampedEndZ);
+                if (!nBL || !nBR || !fTL || !fTR) return;
+
+                const rampGrad = ctx.createLinearGradient(0, fTL.y, 0, nBL.y);
+                rampGrad.addColorStop(0, '#fde047');
+                rampGrad.addColorStop(1, '#d97706');
+                ctx.fillStyle = rampGrad;
+                ctx.beginPath();
+                ctx.moveTo(nBL.x, nBL.y);
+                ctx.lineTo(nBR.x, nBR.y);
+                ctx.lineTo(fTR.x, fTR.y);
+                ctx.lineTo(fTL.x, fTL.y);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+            } else if (obs.type === 'barrier_low') {
+                const w = 104;
+                const faces = drawBox3D(wx, 12, obs.z, w, 30, 18, {
+                    front: '#ef4444',
+                    top: '#fca5a5',
+                    side: '#991b1b'
+                });
+                if (!faces) return;
+                const { nBL, nBR, nTL } = faces;
+                const fw = nBR.x - nBL.x;
+                const fh = nBL.y - nTL.y;
+
+                ctx.fillStyle = '#ffffff';
+                for (let s = 0; s < 4; s++) {
+                    ctx.fillRect(nTL.x + fw * (0.1 + s * 0.22), nTL.y + fh * 0.15, fw * 0.1, fh * 0.7);
+                }
+
+                [-44, 44].forEach(px => {
+                    const pBot = project(wx + px, 0, obs.z + 6);
+                    const pTop = project(wx + px, 42, obs.z + 6);
+                    if (pBot && pTop) {
+                        ctx.strokeStyle = '#cbd5e1';
+                        ctx.lineWidth = Math.max(2, 6 * pBot.scale);
+                        ctx.beginPath();
+                        ctx.moveTo(pBot.x, pBot.y);
+                        ctx.lineTo(pTop.x, pTop.y);
+                        ctx.stroke();
+                    }
+                });
+
+            } else if (obs.type === 'barrier_high') {
+                const w = 106;
+                const faces = drawBox3D(wx, obs.clearance, obs.z, w, obs.height - obs.clearance, 18, {
+                    front: '#f97316',
+                    top: '#fdba74',
+                    side: '#9a3412'
+                });
+                if (!faces) return;
+                const { nBL, nBR, nTL } = faces;
+                const fw = nBR.x - nBL.x;
+                const fh = nBL.y - nTL.y;
+
+                ctx.fillStyle = '#fef08a';
+                for (let s = 0; s < 4; s++) {
+                    ctx.fillRect(nTL.x + fw * (0.1 + s * 0.22), nTL.y + fh * 0.2, fw * 0.1, fh * 0.6);
+                }
+
+                [-46, 46].forEach(px => {
+                    const pBot = project(wx + px, 0, obs.z + 6);
+                    const pTop = project(wx + px, obs.height, obs.z + 6);
+                    if (pBot && pTop) {
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = Math.max(2.5, 7 * pBot.scale);
+                        ctx.beginPath();
+                        ctx.moveTo(pBot.x, pBot.y);
+                        ctx.lineTo(pTop.x, pTop.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        function drawCollectible(item) {
+            const floatY = item.y + Math.sin(item.bob) * 6;
+            const p = project(item.x, floatY, item.z);
+            if (!p) return;
+
+            const r = 17 * p.scale;
+            if (r < 1.5) return;
+
+            // Sombra no chão abaixo da moeda/item
+            const pShadow = project(item.x, player.groundY + 1, item.z);
+            if (pShadow) {
+                ctx.fillStyle = 'rgba(0,0,0,0.22)';
+                ctx.beginPath();
+                ctx.ellipse(pShadow.x, pShadow.y, r * 0.7, r * 0.28, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+
+            if (item.type === 'coin') {
+                const spinWidth = Math.max(0.28, Math.abs(Math.cos(item.bob * 0.9)));
+                ctx.scale(spinWidth, 1);
+
+                const coinGrad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+                coinGrad.addColorStop(0, '#fef08a');
+                coinGrad.addColorStop(0.6, '#facc15');
+                coinGrad.addColorStop(1, '#ca8a04');
+
+                ctx.fillStyle = coinGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#92400e';
+                ctx.lineWidth = Math.max(1, 2.2 * p.scale);
+                ctx.stroke();
+
+                ctx.fillStyle = '#fef9c3';
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 0.52, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                const bgColors = {
+                    magnet: '#f43f5e',
+                    multiplier: '#f59e0b',
+                    sneakers: '#d946ef'
+                };
+                const icons = {
+                    magnet: '🧲',
+                    multiplier: '2X',
+                    sneakers: '👟'
+                };
+
+                ctx.fillStyle = bgColors[item.type] || '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 1.35, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = Math.max(1.5, 3 * p.scale);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `900 ${Math.max(10, Math.floor(r * 1.15))}px Nunito, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(icons[item.type], 0, 1);
+            }
+
+            ctx.restore();
+        }
+
+        // --- DESENHO REALISTA DA PRANCHA VOADORA (ESTILO CLÁSSICO SUBWAY SURFERS) ---
+        function drawHoverboard(s, hoverFloat, boardTilt) {
+            ctx.save();
+            ctx.translate(0, -10 * s + hoverFloat);
+            ctx.rotate(boardTilt * 0.65);
+
+            // 1. Campo de energia de levitação no trilho
+            const glowGrad = ctx.createRadialGradient(0, 12 * s, 2 * s, 0, 12 * s, 44 * s);
+            glowGrad.addColorStop(0, 'rgba(34, 211, 238, 0.72)');
+            glowGrad.addColorStop(0.55, 'rgba(56, 189, 248, 0.28)');
+            glowGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, 12 * s, 44 * s, 14 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. Turbinas / Propulsores laterais metálicos (estilo Hoverboard clássico)
+            [-32 * s, 32 * s].forEach(tx => {
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.ellipse(tx, 3 * s, 7 * s, 5 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1.5 * s;
+                ctx.stroke();
+
+                const jetGrad = ctx.createRadialGradient(tx, 6 * s, 1 * s, tx, 10 * s, 11 * s);
+                jetGrad.addColorStop(0, '#ffffff');
+                jetGrad.addColorStop(0.4, '#22d3ee');
+                jetGrad.addColorStop(1, 'rgba(34, 211, 238, 0)');
+                ctx.fillStyle = jetGrad;
+                ctx.beginPath();
+                ctx.arc(tx, 8 * s, 10 * s, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 3. Espessura 3D da borda inferior da prancha
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.moveTo(-36 * s, 3 * s);
+            ctx.quadraticCurveTo(-40 * s, 10 * s, 0, 11 * s);
+            ctx.quadraticCurveTo(40 * s, 10 * s, 36 * s, 3 * s);
+            ctx.closePath();
+            ctx.fill();
+
+            // 4. Shape aerodinâmico do deck (bico e rabeta arredondados)
+            const deckGrad = ctx.createLinearGradient(-38 * s, -6 * s, 38 * s, 6 * s);
+            deckGrad.addColorStop(0, '#ec4899');
+            deckGrad.addColorStop(0.35, '#facc15');
+            deckGrad.addColorStop(0.7, '#4ade80');
+            deckGrad.addColorStop(1, '#06b6d4');
+
+            ctx.fillStyle = deckGrad;
+            ctx.beginPath();
+            ctx.moveTo(-37 * s, 1 * s);
+            ctx.bezierCurveTo(-37 * s, -8 * s, -18 * s, -10 * s, 0, -10 * s);
+            ctx.bezierCurveTo(18 * s, -10 * s, 37 * s, -8 * s, 37 * s, 1 * s);
+            ctx.bezierCurveTo(37 * s, 7 * s, 18 * s, 8 * s, 0, 8 * s);
+            ctx.bezierCurveTo(-18 * s, 8 * s, -37 * s, 7 * s, -37 * s, 1 * s);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.2 * s;
+            ctx.stroke();
+
+            // 5. Lixa antiderrapante (Grip Tape) no centro com listras neon
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.ellipse(0, -1 * s, 24 * s, 5.2 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5 * s;
+            ctx.beginPath();
+            ctx.moveTo(-14 * s, -1 * s);
+            ctx.lineTo(14 * s, -1 * s);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // --- DESENHO DO POLICIAL PERSEGUIDOR E CACHORRINHO ---
+        function drawCopAndDog() {
+            const p = project(cop.x, cop.y, cop.z);
+            if (!p) return;
+
+            const s = p.scale;
+
+            // Sombra no chão
+            const pShadow = project(cop.x, 0, cop.z);
+            if (pShadow) {
+                ctx.fillStyle = 'rgba(0,0,0,0.42)';
+                ctx.beginPath();
+                ctx.ellipse(pShadow.x, pShadow.y, 26 * s, 8 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+
+            const swing = Math.sin(cop.runCycle) * 12 * s;
+            const armSwing = Math.cos(cop.runCycle) * 14 * s;
+            const bounce = Math.abs(Math.sin(cop.runCycle)) * 4 * s;
+
+            // Pernas do policial (calça azul-marinho)
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 8.5 * s;
+            ctx.strokeStyle = '#172554';
+            ctx.beginPath();
+            ctx.moveTo(-8 * s, -34 * s - bounce);
+            ctx.lineTo(-10 * s, -10 * s + swing);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(8 * s, -34 * s - bounce);
+            ctx.lineTo(10 * s, -10 * s - swing);
+            ctx.stroke();
+
+            // Botas pretas
+            ctx.fillStyle = '#090d16';
+            ctx.beginPath();
+            ctx.ellipse(-10 * s, -7 * s + swing, 7 * s, 4 * s, 0, 0, Math.PI * 2);
+            ctx.ellipse(10 * s, -7 * s - swing, 7 * s, 4 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tronco robusto (uniforme azul policial)
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.roundRect(-18 * s, -66 * s - bounce, 36 * s, 35 * s, 9 * s);
+            ctx.fill();
+
+            // Cinto tático preto com fivela dourada
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-17 * s, -38 * s - bounce, 34 * s, 5 * s);
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(-4 * s, -39 * s - bounce, 8 * s, 7 * s);
+
+            // Braço esquerdo balançando + Braço direito erguendo cassetete
+            ctx.strokeStyle = '#1d4ed8';
+            ctx.lineWidth = 7.5 * s;
+            ctx.beginPath();
+            ctx.moveTo(-18 * s, -58 * s - bounce);
+            ctx.lineTo(-24 * s, -38 * s - armSwing);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(18 * s, -58 * s - bounce);
+            ctx.lineTo(25 * s, -68 * s + armSwing * 0.4);
+            ctx.stroke();
+
+            // Cassetete preto na mão direita
+            ctx.strokeStyle = '#090d16';
+            ctx.lineWidth = 4.5 * s;
+            ctx.beginPath();
+            ctx.moveTo(25 * s, -68 * s + armSwing * 0.4);
+            ctx.lineTo(29 * s, -84 * s + armSwing * 0.4);
+            ctx.stroke();
+
+            // Cabeça e quepe oficial
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(0, -77 * s - bounce, 12 * s, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bigode clássico do guarda
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(-7 * s, -75 * s - bounce, 14 * s, 3.5 * s);
+
+            // Quepe azul-marinho com aba preta e brasão dourado
+            ctx.fillStyle = '#172554';
+            ctx.beginPath();
+            ctx.ellipse(0, -86 * s - bounce, 15 * s, 6 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(-13 * s, -84 * s - bounce, 26 * s, 3.5 * s);
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(0, -87 * s - bounce, 3.2 * s, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cachorrinho Pitbull correndo ao lado do policial!
+            const dogBounce = Math.abs(Math.cos(cop.runCycle * 1.2)) * 5 * s;
+            ctx.save();
+            ctx.translate(28 * s, -12 * s - dogBounce);
+            ctx.fillStyle = '#92400e';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 12 * s, 7 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(7 * s, -6 * s, 6.5 * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2.5 * s;
+            ctx.beginPath();
+            ctx.moveTo(2 * s, -5 * s);
+            ctx.lineTo(6 * s, 1 * s);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function drawPlayer() {
+            const p = project(player.x, player.y, 0);
+            if (!p) return;
+
+            const s = p.scale;
+
+            // Sombra dinâmica no chão/teto
+            const pShadow = project(player.x, player.groundY, 0);
+            if (pShadow) {
+                const heightDiff = Math.max(0, player.y - player.groundY);
+                const shadowScale = Math.max(0.35, 1 - heightDiff / 240);
+                ctx.fillStyle = 'rgba(0,0,0,0.38)';
+                ctx.beginPath();
+                ctx.ellipse(pShadow.x, pShadow.y, 26 * s * shadowScale, 8 * s * shadowScale, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(player.tilt);
+
+            // Desenha Prancha Voadora realista quando ativa
+            if (player.boardTimer > 0) {
+                const hoverFloat = Math.sin(performance.now() * 0.012) * 3.5 * s;
+                drawHoverboard(s, hoverFloat, player.tilt);
+            }
+
+            const hasSneakers = player.sneakersTimer > 0;
+            const shoeColor = hasSneakers ? '#e879f9' : '#facc15';
+
+            if (player.isSliding) {
+                // Posição de deslize
+                ctx.fillStyle = '#1e3a8a';
+                ctx.beginPath();
+                ctx.roundRect(-22 * s, -22 * s, 44 * s, 16 * s, 8 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.roundRect(-18 * s, -36 * s, 36 * s, 20 * s, 9 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#fed7aa';
+                ctx.beginPath();
+                ctx.arc(0, -44 * s, 11 * s, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, -47 * s, 11.5 * s, Math.PI, 0);
+                ctx.fill();
+            } else if (player.boardTimer > 0) {
+                // Postura de surfista equilibrando sobre a prancha
+                const surfBob = Math.sin(performance.now() * 0.012) * 3 * s;
+                ctx.translate(0, -9 * s + surfBob);
+
+                ctx.lineCap = 'round';
+                ctx.lineWidth = 8 * s;
+                ctx.strokeStyle = '#1e3a8a';
+                ctx.beginPath();
+                ctx.moveTo(-7 * s, -34 * s);
+                ctx.lineTo(-14 * s, -8 * s);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(7 * s, -34 * s);
+                ctx.lineTo(14 * s, -8 * s);
+                ctx.stroke();
+
+                ctx.fillStyle = shoeColor;
+                ctx.beginPath();
+                ctx.ellipse(-14 * s, -6 * s, 8 * s, 4 * s, 0, 0, Math.PI * 2);
+                ctx.ellipse(14 * s, -6 * s, 8 * s, 4 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.roundRect(-16 * s, -64 * s, 32 * s, 33 * s, 9 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.roundRect(-11 * s, -60 * s, 22 * s, 23 * s, 6 * s);
+                ctx.fill();
+
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 7 * s;
+                ctx.beginPath();
+                ctx.moveTo(-16 * s, -56 * s);
+                ctx.lineTo(-30 * s, -48 * s);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(16 * s, -56 * s);
+                ctx.lineTo(30 * s, -48 * s);
+                ctx.stroke();
+
+                ctx.fillStyle = '#fed7aa';
+                ctx.beginPath();
+                ctx.arc(0, -76 * s, 12 * s, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, -79 * s, 12.5 * s, Math.PI, 0);
+                ctx.fill();
+                ctx.fillRect(-13 * s, -80 * s, 26 * s, 4 * s);
+            } else {
+                // Corrida / Pulo normal
+                const swing = player.isJumping ? 12 * s : Math.sin(player.runCycle) * 14 * s;
+                const armSwing = player.isJumping ? -16 * s : Math.cos(player.runCycle) * 16 * s;
+
+                ctx.lineCap = 'round';
+                ctx.lineWidth = 8.5 * s;
+
+                ctx.strokeStyle = '#1e3a8a';
+                ctx.beginPath();
+                ctx.moveTo(-7 * s, -36 * s);
+                ctx.lineTo(-9 * s, -10 * s + swing);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(7 * s, -36 * s);
+                ctx.lineTo(9 * s, -10 * s - swing);
+                ctx.stroke();
+
+                ctx.fillStyle = shoeColor;
+                ctx.beginPath();
+                ctx.ellipse(-9 * s, -7 * s + swing, 8 * s, 4.5 * s, 0, 0, Math.PI * 2);
+                ctx.ellipse(9 * s, -7 * s - swing, 8 * s, 4.5 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.roundRect(-16 * s, -66 * s, 32 * s, 34 * s, 9 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.roundRect(-11 * s, -62 * s, 22 * s, 24 * s, 6 * s);
+                ctx.fill();
+
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 7 * s;
+                ctx.beginPath();
+                ctx.moveTo(-16 * s, -58 * s);
+                ctx.lineTo(-23 * s, -36 * s - armSwing);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(16 * s, -58 * s);
+                ctx.lineTo(23 * s, -36 * s + armSwing);
+                ctx.stroke();
+
+                ctx.fillStyle = '#fed7aa';
+                ctx.beginPath();
+                ctx.arc(0, -78 * s, 12 * s, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, -81 * s, 12.5 * s, Math.PI, 0);
+                ctx.fill();
+                ctx.fillRect(-13 * s, -82 * s, 26 * s, 4 * s);
+            }
+
+            // Estrelinhas girando na cabeça quando está desnorteado (após 1ª batida)
+            if (player.stumbleTimer > 0) {
+                const headY = player.isSliding ? -58 * s : -96 * s;
+                const t = performance.now() * 0.008;
+                for (let st = 0; st < 3; st++) {
+                    const ang = t + (st * Math.PI * 2) / 3;
+                    const sx = Math.cos(ang) * 18 * s;
+                    const sy = headY + Math.sin(ang) * 5 * s;
+                    ctx.fillStyle = st % 2 === 0 ? '#fde047' : '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 3.8 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawParticlesAndTexts() {
+            particles.forEach(pt => {
+                const p = project(pt.x, pt.y, pt.z);
+                if (!p) return;
+                ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, pt.size * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            floatingTexts.forEach(ft => {
+                const p = project(ft.x, ft.y, ft.z);
+                if (!p) return;
+                ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+                ctx.font = '900 18px Nunito, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#1e1b4b';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, p.x, p.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, p.x, p.y);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function render() {
+            ctx.save();
+
+            if (shakeTime > 0) {
+                const dx = (Math.random() - 0.5) * shakeIntensity;
+                const dy = (Math.random() - 0.5) * shakeIntensity;
+                ctx.translate(dx, dy);
+            }
+
+            drawSkyAndCity();
+            drawTracks();
+            drawTrackProps();
+
+            const renderList = [];
+            obstacles.forEach(obs => {
+                renderList.push({ z: obs.z + obs.length * 0.5, frontZ: obs.z, draw: () => drawObstacle(obs) });
+            });
+            collectibles.forEach(item => {
+                renderList.push({ z: item.z, frontZ: item.z, draw: () => drawCollectible(item) });
+            });
+            renderList.push({ z: 0, frontZ: 0, draw: () => drawPlayer() });
+            renderList.push({ z: cop.z, frontZ: cop.z, draw: () => drawCopAndDog() });
+
+            renderList.sort((a, b) => {
+                if (Math.abs(b.frontZ - a.frontZ) > 35) {
+                    return b.frontZ - a.frontZ;
+                }
+                return b.z - a.z;
+            });
+            renderList.forEach(obj => obj.draw());
+
+            drawParticlesAndTexts();
+
+            ctx.restore();
+        }
+
+        // --- LOOP PRINCIPAL ---
+        let lastTime = performance.now();
+
+        function gameLoop(now) {
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+
+            update(dt);
+            render();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
